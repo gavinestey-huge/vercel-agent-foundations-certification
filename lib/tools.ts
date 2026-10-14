@@ -10,7 +10,29 @@
 
 import { tool } from "ai";
 import { z } from "zod";
-import { ApiRequestError, createReturn, getCategories, getOrder, getProducts, preauthorizeRefund, notifyReturnInProcess } from "@/lib/api";
+import { ApiRequestError, createReturn, getCategories, getOrder, getProducts, preauthorizeRefund, notifyReturnInProcess, getProductById } from "@/lib/api";
+
+export const getProductDetails = tool({
+  description: `Return a single product. Use this when a user asks about an individual product and it makes sense to provide
+   more detail`,
+  inputSchema: z.object({
+    id: z
+      .string()
+      .nonempty()
+      .describe(
+        `Id of product that the user is looking for e.g. 'tshirt_001.'`
+      )
+  }),
+  execute: async ({ id }) => {
+    try {
+      const product = await getProductById(id);
+      return { product: product };
+    } catch (err) {
+      const message = err instanceof ApiRequestError ? err.message : "Unknown error";
+      return { error: message, product: null };
+    }
+  },
+});
 
 export const searchProducts = tool({
   description: `Search the Vercel swag store product catalog. Use this whenever the user asks about products, what the store sells, or wants recommendations. Optionally narrow results to a single category.`,
